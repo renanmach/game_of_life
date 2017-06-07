@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <omp.h>
 
 // GLOBAL VARIABLES
 char **board;
@@ -49,6 +50,8 @@ int main(void) {
     // read input
     scanf("%d %d", &n, &nt);
     scanf("%d %d",&nrows, &ncols);
+    
+    omp_set_num_threads(nt);
     
     initialize_board();
     
@@ -114,7 +117,7 @@ int num_neighbours(int row, int col) {
 void update_board() {
     int neighbours = 0;
     
-   
+    #pragma omp parallel for private(neighbours)
     for (int y = 0; y < nrows; y++) {
         for (int x = 0; x < ncols; x++) {
             neighbours = num_neighbours(x, y);
