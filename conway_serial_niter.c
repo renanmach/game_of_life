@@ -8,34 +8,13 @@
  * 
  * Serial version
  */
- 
+
+#include "conway_functions.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
 
-// GLOBAL VARIABLES
-char **board;
-char **temp;
-int nrows, ncols;
-
-#define OFF 0
-#define ON 1
-
-// Count the number of live cells all around the cell given by
-// the position (row, col).
-int num_neighbours(int row, int col);
-
-// initialize board reading from stdio
-void initialize_board();
-
-// free board memory
-void free_board();
-
-// print board
-void print_board();
-
-// to calculate the time
-double rtclock();
+extern char **board;
+extern char **temp;
+extern int nrows, ncols;
 
 // update the board according to the game of life rules
 void update_board();
@@ -52,6 +31,7 @@ int main(void) {
     
     initialize_board();
     
+    // run n iterations
     t_start = rtclock();
     while(n--) update_board();
     t_end = rtclock();
@@ -66,55 +46,9 @@ int main(void) {
     return 0;
 }
 
-void initialize_board() {
-    int i,j;
-    
-    board = (char **) malloc(nrows*sizeof(char*));
-    temp = (char **) malloc(nrows*sizeof(char*));
-    
-    for(i=0;i<nrows;i++) {
-        board[i] = (char *) malloc(ncols*sizeof(char));
-        temp[i] = (char *) malloc(ncols*sizeof(char));
-        
-        for(j=0;j<ncols;j++) {
-            scanf("%c",&board[i][j]);
-            temp[i][j] = board[i][j];
-        }
-    }
-}
-
-void free_board() {
-    int i;
-    
-    for(i=0;i<nrows;i++) {
-        free(board[i]);
-        free(temp[i]);
-    }
-    
-    free(board);
-    free(temp);
-}
-
-int num_neighbours(int row, int col) {
-    int num_adj = 0;
-    int i,j;
-    
-    for(i=row-1;i<=row+1;i++) {
-        for(j=col-1;j<=col+1;j++) {
-            if(i==j) continue;
-            
-            if(i >= 0 && j>=0 && i < nrows && j < ncols && board[i][j] == ON)
-                num_adj++;  
-        }
-    }
-    
-    return num_adj;
-}
-
 void update_board() {
     int neighbours = 0;
     
-   
     for (int y = 0; y < nrows; y++) {
         for (int x = 0; x < ncols; x++) {
             neighbours = num_neighbours(x, y);
@@ -143,24 +77,4 @@ void update_board() {
             board[x][y] = temp[x][y];
         }
     }
-}
-
-void print_board() {
-    int i,j;
-    
-    for(i=0;i<nrows;i++) {
-        for(j=0;j<ncols;j++) {
-            printf("%c",board[i][j]);
-        }
-        printf("\n");
-    }
-}
-
-double rtclock() {
-  struct timezone Tzp;
-  struct timeval Tp;
-  int stat;
-  stat = gettimeofday (&Tp, &Tzp);
-  if (stat != 0) printf("Error return from gettimeofday: %d",stat);
-  return(Tp.tv_sec + Tp.tv_usec*1.0e-6);
 }
