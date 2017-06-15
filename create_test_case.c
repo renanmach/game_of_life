@@ -14,9 +14,9 @@
 #include <stdio.h>
 
 #define NROWS (int) 1000
-#define NCOLS (int) 1000
-#define FILE_NAME "test_files/input/1.txt"
-#define N_THREADS (int) 1
+#define NCOLS (int) 1500
+#define FILE_NAME "test_files/input/2.txt"
+#define N_THREADS (int) 4
 #define N_ITER (int) 100
 
 // Input format

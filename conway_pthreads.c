@@ -12,13 +12,17 @@
 #include "conway_functions.h"
 #include <stdio.h>
 #include <omp.h>
+#include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 // GLOBAL VARIABLES
 extern char **board;
 extern char **temp;
 extern char **board2; // for serial comparison
 extern int nrows, ncols;
+int NUM_THREADS;
+
 
 // update the board according to the game of life rules
 void update_board();
@@ -26,21 +30,20 @@ void update_board();
 int main(void) {
     double t_start, t_end;
     
-    int n, n2; // number of iteractions
+    int n; // number of iteractions
     int nt; // number of threads
     
     // read input
     scanf("%d %d", &n, &nt);
     scanf("%d %d",&nrows, &ncols);
     
-    // for serial comparison
-    n2 = n;
-    
-    omp_set_num_threads(nt);
+    // for global use by pthreads
+    NUM_THREADS = nt;
     
     initialize_board();
     
     #ifdef COMPARE_SERIAL
+    int n2 = n;
     initialize_board_2();
     #endif
     
@@ -79,20 +82,16 @@ int main(void) {
     return 0;
 }
 
-
 // function called for each thread
-void update_board_parallel(void *arguments) {
+void *update_board_parallel(void *arguments) {
+    long rank = (long) arguments;
     
+    int start = rank*nrows/NUM_THREADS;
+    int end = rank == (NUM_THREADS-1) ? nrows : (rank+1)*nrows/NUM_THREADS;
     
-}
-
-void update_board() {
-    pthread_t *thread_handles = malloc(sizeof(pthread_t) * nt);
-    long thread;
+    int neighbours;
     
-    int neighbours = 0;
-    
-    for (int i = 0; i < nrows; i++) {
+    for (int i = start; i < end; i++) {
         for (int j = 0; j < ncols; j++) {
             neighbours = num_neighbours(i, j);
             
@@ -114,11 +113,25 @@ void update_board() {
         }
     }
     
+    return NULL;
+}
+
+void update_board() {
+    pthread_t *thread_handles = (pthread_t *) malloc(sizeof(pthread_t) * NUM_THREADS);
+    long thread;
+	
+	for(thread = 0; thread < NUM_THREADS; thread++) {
+		pthread_create(&thread_handles[thread], NULL, update_board_parallel, (void *) thread);
+	}
+	
+	for(thread = 0 ; thread < NUM_THREADS; thread++) {
+		pthread_join(thread_handles[thread], NULL);
+	}
+    
     // copies the temp board back to the board
+    int line_size = ncols*sizeof(char);
     for (int i = 0; i < nrows; i++) {
-        for (int j = 0; j < ncols; j++) {
-            board[i][j] = temp[i][j];
-        }
+        memcpy((&board[i][0]),(&temp[i][0]),line_size);
     }
     
     free(thread_handles);

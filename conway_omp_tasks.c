@@ -26,21 +26,19 @@ void update_board();
 int main(void) {
     double t_start, t_end;
     
-    int n, n2; // number of iteractions
+    int n; // number of iteractions
     int nt; // number of threads
     
     // read input
     scanf("%d %d", &n, &nt);
     scanf("%d %d",&nrows, &ncols);
     
-    // for serial comparison
-    n2 = n;
-    
     omp_set_num_threads(nt);
     
     initialize_board();
     
     #ifdef COMPARE_SERIAL
+    int n2 = n;
     initialize_board_2();
     #endif
     

@@ -1,1 +1,6 @@
-gcc -I /usr/include/SDL -o test conway_serial.c -lSDL -L/usr/lib/x86_64-linux-gnu -lm
+reset; gcc -fopenmp conway_functions.c conway_omp_tasks.c -Wall -DCOMPARE_SERIAL
+./a.out <test_files/input/1.txt 
+
+
+
+reset; gcc -fopenmp conway_functions.c conway_omp_tasks_niter.c -Wall -DPRINT_BOARD
