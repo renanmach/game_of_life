@@ -16,3 +16,16 @@ void print_board();
 
 // to calculate the time
 double rtclock();
+
+// update the board according to the game of life rules
+// serial implementation
+void update_board_serial();
+
+// allocs board2 and copies the value of board to board2
+void initialize_board_2();
+
+// copies the board2 to temp
+void copy_board2_to_temp(); 
+
+// return the number of different values between board and board2
+int compare_serial_parallel();
