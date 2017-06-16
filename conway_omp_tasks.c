@@ -15,8 +15,8 @@
 #include <string.h>
 
 // GLOBAL VARIABLES
-extern char **board;
-extern char **temp;
+extern char *board;
+extern char *temp;
 extern char **board2; // for serial comparison
 extern int nrows, ncols;
 
@@ -89,19 +89,20 @@ void update_board() {
             {
                 for (int j = 0; j < ncols; j++) {
                     int neighbours = num_neighbours(i, j);
+                    int id = i*ncols + j;
                     
                     /* Dies by underpopulation. */
-                    if (neighbours < 2 && board[i][j] == ON) {
-                        temp[i][j] = OFF; 
+                    if (neighbours < 2 && board[id] == ON) {
+                        temp[id] = OFF; 
                     } 
                     /* Dies by overpopulation. */
-                    else if (neighbours > 3 && board[i][j] == ON) {
-                        temp[i][j] = OFF; 
+                    else if (neighbours > 3 && board[id] == ON) {
+                        temp[id] = OFF; 
                     }
                     
                     /* Become alive because of reproduction. */
-                    else if (neighbours == 3 && board[i][j] == OFF) {
-                        temp[i][j] = ON;
+                    else if (neighbours == 3 && board[id] == OFF) {
+                        temp[id] = ON;
                     }
                     
                     /* Otherwise the cell lives with just the right company. */
@@ -111,8 +112,5 @@ void update_board() {
     }
     
     // copies the temp board back to the board
-    int line_size = ncols*sizeof(char);
-    for (int i = 0; i < nrows; i++) {
-        memcpy((&board[i][0]),(&temp[i][0]),line_size);
-    }
+    memcpy(&board[0], &temp[0], nrows*ncols*sizeof(char)); 
 }

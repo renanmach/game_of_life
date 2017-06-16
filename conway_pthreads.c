@@ -17,12 +17,12 @@
 #include <pthread.h>
 
 // GLOBAL VARIABLES
-extern char **board;
-extern char **temp;
-extern char **board2; // for serial comparison
+extern char *board;
+extern char *temp;
+extern char *board2; // for serial comparison
 extern int nrows, ncols;
 int NUM_THREADS;
-
+pthread_t *thread_handles;
 
 // update the board according to the game of life rules
 void update_board();
@@ -39,6 +39,7 @@ int main(void) {
     
     // for global use by pthreads
     NUM_THREADS = nt;
+    thread_handles = (pthread_t *) malloc(sizeof(pthread_t) * NUM_THREADS);
     
     initialize_board();
     
@@ -77,6 +78,8 @@ int main(void) {
     else printf("ERROR: Different result! Number of differences = %d\n", diff);
     #endif
     
+    //Pthreads
+    free(thread_handles);
     free_board();
    
     return 0;
@@ -89,24 +92,25 @@ void *update_board_parallel(void *arguments) {
     int start = rank*nrows/NUM_THREADS;
     int end = rank == (NUM_THREADS-1) ? nrows : (rank+1)*nrows/NUM_THREADS;
     
-    int neighbours;
+    int neighbours, id;
     
     for (int i = start; i < end; i++) {
         for (int j = 0; j < ncols; j++) {
+            id = i*ncols + j;
             neighbours = num_neighbours(i, j);
             
             /* Dies by underpopulation. */
-            if (neighbours < 2 && board[i][j] == ON) {
-                temp[i][j] = OFF; 
+            if (neighbours < 2 && board[id] == ON) {
+                temp[id] = OFF; 
             } 
             /* Dies by overpopulation. */
-            else if (neighbours > 3 && board[i][j] == ON) {
-                temp[i][j] = OFF; 
+            else if (neighbours > 3 && board[id] == ON) {
+                temp[id] = OFF; 
             }
             
             /* Become alive because of reproduction. */
-            else if (neighbours == 3 && board[i][j] == OFF) {
-                temp[i][j] = ON;
+            else if (neighbours == 3 && board[id] == OFF) {
+                temp[id] = ON;
             }
             
             /* Otherwise the cell lives with just the right company. */
@@ -117,7 +121,6 @@ void *update_board_parallel(void *arguments) {
 }
 
 void update_board() {
-    pthread_t *thread_handles = (pthread_t *) malloc(sizeof(pthread_t) * NUM_THREADS);
     long thread;
 	
 	for(thread = 0; thread < NUM_THREADS; thread++) {
@@ -129,10 +132,5 @@ void update_board() {
 	}
     
     // copies the temp board back to the board
-    int line_size = ncols*sizeof(char);
-    for (int i = 0; i < nrows; i++) {
-        memcpy((&board[i][0]),(&temp[i][0]),line_size);
-    }
-    
-    free(thread_handles);
+    memcpy(&board[0], &temp[0], nrows*ncols*sizeof(char)); 
 }

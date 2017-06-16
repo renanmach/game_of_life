@@ -15,9 +15,9 @@
 #include <string.h>
 
 // GLOBAL VARIABLES
-char **board;
-char **board2;
-char **temp;
+char *board;
+char *board2;
+char *temp;
 int nrows, ncols;
 
 void print_board() {
@@ -25,7 +25,7 @@ void print_board() {
     
     for(i=0;i<nrows;i++) {
         for(j=0;j<ncols;j++) {
-            printf("%c",board[i][j]);
+            printf("%c",board[i*ncols + j]);
         }
         printf("\n");
     }
@@ -41,38 +41,27 @@ double rtclock() {
 }
 
 void initialize_board() {
-    int i,j;
+    int i,j, id;
     
-    board = (char **) malloc(nrows*sizeof(char*));
-    temp = (char **) malloc(nrows*sizeof(char*));
+    board = (char *) malloc(nrows*ncols*sizeof(char*));
+    temp = (char *) malloc(nrows*ncols*sizeof(char*));
     board2 = NULL;
     
     for(i=0;i<nrows;i++) {
-        board[i] = (char *) malloc(ncols*sizeof(char));
-        temp[i] = (char *) malloc(ncols*sizeof(char));
-        
         for(j=0;j<ncols;j++) {
-            scanf("%c",&board[i][j]);
-            temp[i][j] = board[i][j];
+            id = i*ncols+j;
+            
+            scanf("%c",&board[id]);
+            temp[id] = board[id];
         }
     }
 }
 
 void free_board() {
-    int i;
-    
-    for(i=0;i<nrows;i++) {
-        free(board[i]);
-        free(temp[i]);
-    }
-    
     free(board);
     free(temp);
     
     if(board2 != NULL) {
-        for(i=0;i<nrows;i++) {
-            free(board2[i]);
-        } 
         free(board2);
     }
 }
@@ -83,9 +72,9 @@ int num_neighbours(int row, int col) {
     
     for(i=row-1;i<=row+1;i++) {
         for(j=col-1;j<=col+1;j++) {
-            if(i==j) continue;
+            if(i==row && j == col) continue;
             
-            if(i >= 0 && j>=0 && i < nrows && j < ncols && board[i][j] == ON)
+            if(i >= 0 && j>=0 && i < nrows && j < ncols && board[i*ncols+j] == ON)
                 num_adj++;  
         }
     }
@@ -95,23 +84,26 @@ int num_neighbours(int row, int col) {
 
 void update_board_serial() {
     int neighbours = 0;
+    int id;
     
     for (int i = 0; i < nrows; i++) {
         for (int j = 0; j < ncols; j++) {
+            id = i*ncols+j;
+            
             neighbours = num_neighbours(i, j);
             
             /* Dies by underpopulation. */
-            if (neighbours < 2 && board[i][j] == ON) {
-                temp[i][j] = OFF; 
+            if (neighbours < 2 && board[id] == ON) {
+                temp[id] = OFF; 
             } 
             /* Dies by overpopulation. */
-            else if (neighbours > 3 && board[i][j] == ON) {
-                temp[i][j] = OFF; 
+            else if (neighbours > 3 && board[id] == ON) {
+                temp[id] = OFF; 
             }
             
             /* Become alive because of reproduction. */
-            else if (neighbours == 3 && board[i][j] == OFF) {
-                temp[i][j] = ON;
+            else if (neighbours == 3 && board[id] == OFF) {
+                temp[id] = ON;
             }
             
             /* Otherwise the cell lives with just the right company. */
@@ -119,25 +111,12 @@ void update_board_serial() {
     }
     
     // copies the temp board back to the board
-    int line_size = ncols*sizeof(char);
-    for (int i = 0; i < nrows; i++) {
-        memcpy((&board[i][0]),(&temp[i][0]),line_size);
-    }
+    memcpy(&board[0], &temp[0], nrows*ncols*sizeof(char)); 
 }
 
 void initialize_board_2() {
-    int i,j;
-    
-    board2 = (char **) malloc(nrows*sizeof(char*));
-    
-    for(i=0;i<nrows;i++) {
-        board2[i] = (char *) malloc(ncols*sizeof(char));
-        
-        for(j=0;j<ncols;j++) {
-            board2[i][j] = board[i][j];
-            temp[i][j] = board[i][j];
-        }
-    }
+    board2 = (char *) malloc(nrows*ncols*sizeof(char*));
+    memcpy(&board2[0], &board[0], nrows*ncols*sizeof(char));
 }
 
 int compare_serial_parallel() {
@@ -146,16 +125,12 @@ int compare_serial_parallel() {
     
     for(i = 0 ; i < nrows; i++) 
         for(j = 0 ; j < ncols; j++)
-            if(board[i][j] != board2[i][j])
+            if(board[i*ncols+j] != board2[i*ncols+j])
                 diff++;
     
     return diff;
 }
 
 void copy_board2_to_temp() {
-    for(int i = 0 ; i < nrows ; i++) {
-        for(int j = 0; j < ncols; j++) {
-            temp[i][j] = board2[i][j];
-        }
-    }
+    memcpy(&temp[0], &board2[0], nrows*ncols*sizeof(char));
 }

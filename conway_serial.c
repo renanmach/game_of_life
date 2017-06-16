@@ -13,8 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
-extern char **board;
-extern char **temp;
+extern char *board;
+extern char *temp;
 extern int nrows, ncols;
 
 // update the board according to the game of life rules

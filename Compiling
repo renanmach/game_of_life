@@ -4,3 +4,4 @@ reset; gcc -fopenmp conway_functions.c conway_omp_tasks.c -Wall -DCOMPARE_SERIAL
 
 
 reset; gcc -fopenmp conway_functions.c conway_omp_tasks_niter.c -Wall -DPRINT_BOARD
+reset; gcc -pthread -lpthread conway_functions.c conway_pthreads.c -Wall -DCOMPARE_SERIAL
