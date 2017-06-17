@@ -66,14 +66,15 @@ int num_neighbours(char *b, int row, int col) {
     
     for(i=row-1;i<=row+1;i++) {
         for(j=col-1;j<=col+1;j++) {
-            // a cell is not a neighbour of itself
-            if(i==row && j == col) continue;
-            
             // check boundaries and if the neighbour is alive
             if(i >= 0 && j>=0 && i < nrows && j < ncols && b[i*ncols+j] == ON)
                 num_adj++;  
         }
     }
+    
+    // a cell is not a neighbour of itself 
+    if(b[row*ncols+col] == ON)
+        num_adj--; 
     
     return num_adj;
 }

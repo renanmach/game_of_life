@@ -6,15 +6,20 @@
  * 
  * Conway's Game of Life
  * 
- * CUDA version
+ * CUDA shared memory version
  */
 
 extern "C" {
     #include "conway_functions.h"
 }
 
-// TODO TESTAR VARIOS TILE WIDTH PARA O RELATORIO ***********************************
 #define TILE_WIDTH 16
+
+// for shared memory
+#define MASK_WIDTH 3
+#define RADIUS (MASK_WIDTH-1)/2
+#define SM_LINE_SIZE (TILE_WIDTH+MASK_WIDTH-1)
+#define SM_SIZE SM_LINE_SIZE*SM_LINE_SIZE
 
 extern char *board;
 extern char *temp;
@@ -36,22 +41,17 @@ void initialize_cuda_board() {
     cudaMemcpy(d_temp, temp, board_size, cudaMemcpyHostToDevice);
 }
 
-__device__ int num_neighbours_cuda(char *board, int row, int col, int nrows, int ncols) {
+__device__ inline int num_neighbours_cuda(char *board) {
     int num_adj = 0;
     int i,j;
     
-    for(i=row-1;i<=row+1;i++) {
-        for(j=col-1;j<=col+1;j++) {
-            // check boundaries and if the neighbour is alive
-            if(i >= 0 && j>=0 && i < nrows && j < ncols && board[i*ncols+j] == ON)
-                num_adj++;  
+    for(i = threadIdx.y; i < MASK_WIDTH+threadIdx.y; i++) {
+        for(j = threadIdx.x; j < MASK_WIDTH+threadIdx.x; j++) {
+            if(board[i*SM_LINE_SIZE + j] == ON)
+                num_adj++; 
         }
     }
-    
-    // a cell is not a neighbour of itself 
-    if(board[row*ncols+col] == ON)
-        num_adj--; 
-    
+        
     return num_adj;
 }
 
@@ -66,14 +66,37 @@ __global__ void copy_temp_to_board(char *board, char *temp, int nrows, int ncols
 }
 
 __global__ void update_board_cuda(char *board, char *temp, int nrows, int ncols) {
+    __shared__ char shared_board_part[SM_SIZE];
+    
     int row = threadIdx.y + blockIdx.y * blockDim.y;
 	int col = threadIdx.x + blockIdx.x * blockDim.x;
 	int id = col + row*ncols;
-    int neighbours;
+    int neighbours, curr_r, curr_c, mapID;
+    
+    // fills the shared memory array
+	for(curr_r=row-RADIUS; curr_r-row+RADIUS+threadIdx.y < MASK_WIDTH-1+TILE_WIDTH; curr_r += TILE_WIDTH) {	
+		for(curr_c=col-RADIUS; curr_c-col+RADIUS+threadIdx.x < MASK_WIDTH-1+TILE_WIDTH; curr_c += TILE_WIDTH) {
+			mapID = SM_LINE_SIZE*(curr_r-row+RADIUS + threadIdx.y) + curr_c-col+RADIUS + threadIdx.x;
+			
+			if(curr_c >= 0 && curr_c < ncols && curr_r >= 0 && curr_r < nrows) {
+                shared_board_part[mapID] = board[curr_r*ncols + curr_c];
+			}
+			
+			// borders
+			else {
+				shared_board_part[mapID] = 0;
+			}
+		}
+	}
+
+	__syncthreads();
     
     if (row < nrows && col < ncols) {
-        neighbours = num_neighbours_cuda(board, row, col, nrows, ncols);
-            
+        neighbours = num_neighbours_cuda(shared_board_part);
+        
+        // a cell is not a neighbour of itself 
+        if(board[id] == ON) neighbours--;
+        
         /* Dies by underpopulation. */
         if (neighbours < 2 && board[id] == ON) {
             temp[id] = OFF; 
@@ -93,7 +116,7 @@ __global__ void update_board_cuda(char *board, char *temp, int nrows, int ncols)
 }
 
 void update_board(int n, int nt) {
-    printf("Running CUDA!\n");
+    printf("Running CUDA shared!\n");
     
     initialize_cuda_board();
     
