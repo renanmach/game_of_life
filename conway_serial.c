@@ -39,7 +39,10 @@ int main(void) {
     
     double t_time = t_end - t_start;
    
-    print_board();
+    #ifdef PRINT_BOARD
+        print_board();
+    #endif
+    
     printf("Time: %f seconds\n", t_time);
     
     free_board();
@@ -48,5 +51,5 @@ int main(void) {
 }
 
 void update_board() {
-    update_board_serial();
+    update_board_serial(board);
 }

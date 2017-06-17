@@ -44,8 +44,8 @@ int main(void) {
     initialize_board();
     
     #ifdef COMPARE_SERIAL
-    int n2 = n;
-    initialize_board_2();
+        int n2 = n;
+        initialize_board_2();
     #endif
     
     // run n iterations
@@ -56,7 +56,7 @@ int main(void) {
     double t_time = t_end - t_start;
    
     #ifdef PRINT_BOARD
-    print_board();
+        print_board();
     #endif
     
     printf("Time: %f seconds\n", t_time);
@@ -64,18 +64,7 @@ int main(void) {
     // Run serial version and compare with parallel results
     // Prints the speedup
     #ifdef COMPARE_SERIAL
-    copy_board2_to_temp();
-    
-    t_start = rtclock();
-    while(n2--) update_board_serial();
-    t_end = rtclock();
-    double t_time_serial = t_end - t_start;
-    printf("Time serial: %f seconds\n", t_time_serial);
-    printf("Speedup: %f seconds\n", t_time_serial/t_time);
-    
-    int diff = compare_serial_parallel();
-    if(diff == 0) printf("Same result!\n");
-    else printf("ERROR: Different result! Number of differences = %d\n", diff);
+        compare_serial(n2, t_time);
     #endif
     
     //Pthreads
@@ -97,7 +86,7 @@ void *update_board_parallel(void *arguments) {
     for (int i = start; i < end; i++) {
         for (int j = 0; j < ncols; j++) {
             id = i*ncols + j;
-            neighbours = num_neighbours(i, j);
+            neighbours = num_neighbours(board, i, j);
             
             /* Dies by underpopulation. */
             if (neighbours < 2 && board[id] == ON) {

@@ -43,8 +43,8 @@ double rtclock() {
 void initialize_board() {
     int i,j, id;
     
-    board = (char *) malloc(nrows*ncols*sizeof(char*));
-    temp = (char *) malloc(nrows*ncols*sizeof(char*));
+    board = (char *) malloc(nrows*ncols*sizeof(char));
+    temp = (char *) malloc(nrows*ncols*sizeof(char));
     board2 = NULL;
     
     for(i=0;i<nrows;i++) {
@@ -66,7 +66,7 @@ void free_board() {
     }
 }
 
-int num_neighbours(int row, int col) {
+int num_neighbours(char *b, int row, int col) {
     int num_adj = 0;
     int i,j;
     
@@ -74,7 +74,7 @@ int num_neighbours(int row, int col) {
         for(j=col-1;j<=col+1;j++) {
             if(i==row && j == col) continue;
             
-            if(i >= 0 && j>=0 && i < nrows && j < ncols && board[i*ncols+j] == ON)
+            if(i >= 0 && j>=0 && i < nrows && j < ncols && b[i*ncols+j] == ON)
                 num_adj++;  
         }
     }
@@ -82,7 +82,7 @@ int num_neighbours(int row, int col) {
     return num_adj;
 }
 
-void update_board_serial() {
+void update_board_serial(char *b) {
     int neighbours = 0;
     int id;
     
@@ -90,19 +90,19 @@ void update_board_serial() {
         for (int j = 0; j < ncols; j++) {
             id = i*ncols+j;
             
-            neighbours = num_neighbours(i, j);
+            neighbours = num_neighbours(b, i, j);
             
             /* Dies by underpopulation. */
-            if (neighbours < 2 && board[id] == ON) {
+            if (neighbours < 2 && b[id] == ON) {
                 temp[id] = OFF; 
             } 
             /* Dies by overpopulation. */
-            else if (neighbours > 3 && board[id] == ON) {
+            else if (neighbours > 3 && b[id] == ON) {
                 temp[id] = OFF; 
             }
             
             /* Become alive because of reproduction. */
-            else if (neighbours == 3 && board[id] == OFF) {
+            else if (neighbours == 3 && b[id] == OFF) {
                 temp[id] = ON;
             }
             
@@ -111,11 +111,11 @@ void update_board_serial() {
     }
     
     // copies the temp board back to the board
-    memcpy(&board[0], &temp[0], nrows*ncols*sizeof(char)); 
+    memcpy(&b[0], &temp[0], nrows*ncols*sizeof(char)); 
 }
 
 void initialize_board_2() {
-    board2 = (char *) malloc(nrows*ncols*sizeof(char*));
+    board2 = (char *) malloc(nrows*ncols*sizeof(char));
     memcpy(&board2[0], &board[0], nrows*ncols*sizeof(char));
 }
 
@@ -133,4 +133,20 @@ int compare_serial_parallel() {
 
 void copy_board2_to_temp() {
     memcpy(&temp[0], &board2[0], nrows*ncols*sizeof(char));
+}
+
+void compare_serial(int n2, double t_time_parallel) {
+    copy_board2_to_temp();
+        
+    double t_start = rtclock();
+    while(n2--) update_board_serial(board2);
+    double t_end = rtclock();
+    double t_time_serial = t_end - t_start;
+    
+    printf("Time serial: %f seconds\n", t_time_serial);
+    printf("Speedup: %f\n", t_time_serial/t_time_parallel);
+    
+    int diff = compare_serial_parallel();
+    if(diff == 0) printf("Same result!\n");
+    else printf("ERROR: Different result! Number of differences = %d\n", diff);  
 }

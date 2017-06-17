@@ -28,7 +28,7 @@ char *d_temp;
 int board_size;
 
 // update the board according to the game of life rules
-void update_board();
+void update_board(int n);
 
 // allocates and initialize cuda board and variables
 void initialize_cuda_board();
@@ -53,7 +53,7 @@ int main(void) {
     // run n iterations
     t_start = rtclock();
     initialize_cuda_board();
-    while(n--) update_board();
+    update_board(n);
     // copies the result back to the host
     cudaMemcpy(board, d_board, board_size, cudaMemcpyDeviceToHost);
     cudaFree(d_board);
@@ -71,18 +71,7 @@ int main(void) {
     // Run serial version and compare with parallel results
     // Prints the speedup
     #ifdef COMPARE_SERIAL
-        copy_board2_to_temp();
-        
-        t_start = rtclock();
-        while(n2--) update_board_serial();
-        t_end = rtclock();
-        double t_time_serial = t_end - t_start;
-        printf("Time serial: %f seconds\n", t_time_serial);
-        printf("Speedup: %f seconds\n", t_time_serial/t_time);
-        
-        int diff = compare_serial_parallel();
-        if(diff == 0) printf("Same result!\n");
-        else printf("ERROR: Different result! Number of differences = %d\n", diff);
+        compare_serial(n2, t_time);
     #endif
 
     free_board();
@@ -90,7 +79,7 @@ int main(void) {
     return 0;
 }
 
-__device__ int num_neighbours_cuda(char * board, int row, int col, int nrows, int ncols) {
+__device__ int num_neighbours_cuda(char *board, int row, int col, int nrows, int ncols) {
     int num_adj = 0;
     int i,j;
     
@@ -104,6 +93,16 @@ __device__ int num_neighbours_cuda(char * board, int row, int col, int nrows, in
     }
     
     return num_adj;
+}
+
+__global__ void copy_temp_to_board(char *board, char *temp, int nrows, int ncols) {
+    int row = threadIdx.y + blockIdx.y * blockDim.y;
+	int col = threadIdx.x + blockIdx.x * blockDim.x;
+	int id = col + row*ncols;
+    
+    if (row < nrows && col < ncols) {
+        board[id] = temp[id];
+    }
 }
 
 __global__ void update_board_cuda(char *board, char *temp, int nrows, int ncols) {
@@ -143,11 +142,13 @@ void initialize_cuda_board() {
     cudaMemcpy(d_temp, temp, board_size, cudaMemcpyHostToDevice);
 }
 
-void update_board() {
+void update_board(int n) {
     dim3 dimGrid(ceil(ncols/(float)TILE_WIDTH), ceil(nrows/(float) TILE_WIDTH));
 	dim3 dimBlock(TILE_WIDTH, TILE_WIDTH);
     
-    update_board_cuda<<<dimGrid,dimBlock>>>(d_board, d_temp, ncols, nrows);
-    // TODO TESTAR SEM
-    cudaThreadSynchronize();
+    for(int i = 0 ; i < n; i++) {
+        update_board_cuda<<<dimGrid,dimBlock>>>(d_board, d_temp, ncols, nrows);
+        cudaThreadSynchronize();
+        copy_temp_to_board<<<dimGrid,dimBlock>>>(d_board, d_temp, ncols, nrows);
+    }
 }
