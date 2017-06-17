@@ -46,7 +46,7 @@ double rtclock();
 
 // update the board according to the game of life rules
 // serial implementation
-void update_board_serial(char *b);
+void update_board_serial(char *b, char *t);
 
 // allocs board_serial and copies the value of board to board_serial
 void initialize_board_serial();

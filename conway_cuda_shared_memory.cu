@@ -112,11 +112,17 @@ __global__ void update_board_cuda(char *board, char *temp, int nrows, int ncols)
         }
         
         /* Otherwise the cell lives with just the right company. */
+        else {
+            temp[id] = board[id];
+        }
 	}
 }
 
 void update_board(int n, int nt) {
     printf("Running CUDA shared!\n");
+    
+    // switch boards so we dont have to copy temp to board every time
+    int switch_boards = 0;
     
     initialize_cuda_board();
     
@@ -124,13 +130,28 @@ void update_board(int n, int nt) {
 	dim3 dimBlock(TILE_WIDTH, TILE_WIDTH);
     
     for(int it = 0; it < n; it++) {
-        update_board_cuda<<<dimGrid,dimBlock>>>(d_board, d_temp, nrows, ncols);
+        if(switch_boards) {
+            update_board_cuda<<<dimGrid,dimBlock>>>(d_board, d_temp, nrows, ncols);
+            switch_boards = 0;
+        }
+        
+        else {
+            update_board_cuda<<<dimGrid,dimBlock>>>(d_temp, d_board, nrows, ncols);
+            switch_boards = 1;
+        }
+        
         cudaThreadSynchronize();
-        copy_temp_to_board<<<dimGrid,dimBlock>>>(d_board, d_temp, nrows, ncols);
     }
     
     // copies the result back to the host
-    cudaMemcpy(board, d_board, board_size, cudaMemcpyDeviceToHost);
+    if(n%2 != 0) {
+        cudaMemcpy(board, d_board, board_size, cudaMemcpyDeviceToHost);
+    }
+    
+    else {
+        cudaMemcpy(board, d_temp, board_size, cudaMemcpyDeviceToHost);
+        copy_temp_to_board<<<dimGrid,dimBlock>>>(d_board, d_temp, nrows, ncols);
+    }
     
     cudaFree(d_board);
     cudaFree(d_temp);

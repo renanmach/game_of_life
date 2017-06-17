@@ -17,7 +17,7 @@ extern char *board;
 extern char *temp;
 extern int nrows, ncols;
 
-void run_iteration() {
+void run_iteration(char *board, char *temp) {
     // create parallel region
     #pragma omp parallel
     {   
@@ -58,8 +58,24 @@ void run_iteration() {
 void update_board(int n, int nt) {
     printf("Running OMP tasks!\n");
     
+    int switch_boards = 0;
+    
     omp_set_num_threads(nt);
     
-    for(int it = 0 ; it < n; it++)
-        run_iteration();
+    for(int it = 0 ; it < n; it++) {
+        if(!switch_boards) {
+            run_iteration(board, temp);
+            switch_boards = 1;
+        }
+        
+        else {
+            run_iteration(temp, board);
+            switch_boards = 0;
+        }
+    }
+    
+    if(n%2 != 0) {
+        // copies the temp board back to the board
+        memcpy(&board[0], &temp[0], nrows*ncols*sizeof(char));
+    }
 }

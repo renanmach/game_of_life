@@ -13,11 +13,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define NROWS (int) 1000
+#define NROWS (int) 3000
 #define NCOLS (int) 1500
-#define FILE_NAME "test_files/input/2.txt"
+#define FILE_NAME "test_files/input/3.txt"
 #define N_THREADS (int) 4
-#define N_ITER (int) 100
+#define N_ITER (int) 200
 
 // Input format
 // [number of iteractions] [number of threads]

@@ -48,6 +48,9 @@ void *run_iteration(void *arguments) {
             }
             
             /* Otherwise the cell lives with just the right company. */
+            else {
+                temp[id] = board[id];
+            }
         }
     }
     
@@ -57,6 +60,9 @@ void *run_iteration(void *arguments) {
 void update_board(int n, int nt) {
     printf("Running Pthreads!\n");
     
+    char *aux, *initial_board, *initial_temp;
+    int switch_boards = 0;
+    
     long thread;
     pthread_t *thread_handles;
     thread_handles = (pthread_t *) malloc(sizeof(pthread_t) * nt);
@@ -64,8 +70,11 @@ void update_board(int n, int nt) {
     // for global use by pthreads
     NUM_THREADS = nt;
     
+    initial_board = board;
+    initial_temp = temp;
+    
     // runs n iterations
-    while(n--) {
+    for(int it = 0 ; it < n; it++) {
         for(thread = 0; thread < nt; thread++) {
             pthread_create(&thread_handles[thread], NULL, run_iteration, (void *) thread);
         }
@@ -74,9 +83,27 @@ void update_board(int n, int nt) {
             pthread_join(thread_handles[thread], NULL);
         }
         
-        // copies the temp board back to the board
-        memcpy(&board[0], &temp[0], nrows*ncols*sizeof(char)); 
+        if(!switch_boards) {
+            aux = temp;
+            temp = board;
+            board = aux;
+            switch_boards = 1;
+        }
+        
+        else {
+            aux = temp;
+            temp = board;
+            board = aux;
+            switch_boards = 0;
+        }
     }
     
     free(thread_handles);
+    
+    board = initial_board;
+    temp = initial_temp;
+    
+     //copies the temp board back to the board
+    if(n%2 != 0)
+        memcpy(&board[0], &temp[0], nrows*ncols*sizeof(char)); 
 }

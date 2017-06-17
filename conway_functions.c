@@ -79,7 +79,7 @@ int num_neighbours(char *b, int row, int col) {
     return num_adj;
 }
 
-void update_board_serial(char *b) {
+void update_board_serial(char *b, char *t) {
     int neighbours = 0;
     int id;
     
@@ -91,24 +91,24 @@ void update_board_serial(char *b) {
             
             /* Dies by underpopulation. */
             if (neighbours < 2 && b[id] == ON) {
-                temp[id] = OFF; 
+                t[id] = OFF; 
             } 
             /* Dies by overpopulation. */
             else if (neighbours > 3 && b[id] == ON) {
-                temp[id] = OFF; 
+                t[id] = OFF; 
             }
             
             /* Become alive because of reproduction. */
             else if (neighbours == 3 && b[id] == OFF) {
-                temp[id] = ON;
+                t[id] = ON;
             }
             
             /* Otherwise the cell lives with just the right company. */
+            else {
+                t[id] = b[id];
+            }
         }
     }
-    
-    // copies the temp board back to the board
-    memcpy(&b[0], &temp[0], nrows*ncols*sizeof(char)); 
 }
 
 void initialize_board_serial() {
@@ -133,12 +133,32 @@ void copy_board_serial_to_temp() {
 }
 
 void compare_serial(int n, double t_time_parallel) {
+    double t_start, t_end, t_time_serial;
+    
     copy_board_serial_to_temp();
         
-    double t_start = rtclock();
-    while(n--) update_board_serial(board_serial);
-    double t_end = rtclock();
-    double t_time_serial = t_end - t_start;
+    t_start = rtclock();
+    
+    int switch_boards = 0;
+    
+    for(int it = 0 ; it < n; it++) {
+        if(!switch_boards) {
+            update_board_serial(board_serial, temp);
+            switch_boards = 1;
+        }
+        else {
+            update_board_serial(temp, board_serial);
+            switch_boards = 0;
+        }
+    }
+    
+    // copies the temp board back to the board
+    if(n%2 != 0) {
+        memcpy(&board_serial[0], &temp[0], nrows*ncols*sizeof(char));
+    }
+    
+    t_end = rtclock();
+    t_time_serial = t_end - t_start;
     
     printf("Time serial: %f seconds\n", t_time_serial);
     printf("Speedup: %f\n", t_time_serial/t_time_parallel);
