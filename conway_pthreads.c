@@ -10,72 +10,17 @@
  */
 
 #include "conway_functions.h"
-#include <stdio.h>
-#include <omp.h>
-#include <stdlib.h>
-#include <string.h>
 #include <pthread.h>
 
-// GLOBAL VARIABLES
 extern char *board;
 extern char *temp;
-extern char *board2; // for serial comparison
 extern int nrows, ncols;
+
+// Pthreads variables
 int NUM_THREADS;
-pthread_t *thread_handles;
-
-// update the board according to the game of life rules
-void update_board();
-
-int main(void) {
-    double t_start, t_end;
-    
-    int n; // number of iteractions
-    int nt; // number of threads
-    
-    // read input
-    scanf("%d %d", &n, &nt);
-    scanf("%d %d",&nrows, &ncols);
-    
-    // for global use by pthreads
-    NUM_THREADS = nt;
-    thread_handles = (pthread_t *) malloc(sizeof(pthread_t) * NUM_THREADS);
-    
-    initialize_board();
-    
-    #ifdef COMPARE_SERIAL
-        int n2 = n;
-        initialize_board_2();
-    #endif
-    
-    // run n iterations
-    t_start = rtclock();
-    while(n--) update_board();
-    t_end = rtclock();
-    
-    double t_time = t_end - t_start;
-   
-    #ifdef PRINT_BOARD
-        print_board();
-    #endif
-    
-    printf("Time: %f seconds\n", t_time);
-    
-    // Run serial version and compare with parallel results
-    // Prints the speedup
-    #ifdef COMPARE_SERIAL
-        compare_serial(n2, t_time);
-    #endif
-    
-    //Pthreads
-    free(thread_handles);
-    free_board();
-   
-    return 0;
-}
 
 // function called for each thread
-void *update_board_parallel(void *arguments) {
+void *run_iteration(void *arguments) {
     long rank = (long) arguments;
     
     int start = rank*nrows/NUM_THREADS;
@@ -109,17 +54,29 @@ void *update_board_parallel(void *arguments) {
     return NULL;
 }
 
-void update_board() {
-    long thread;
-	
-	for(thread = 0; thread < NUM_THREADS; thread++) {
-		pthread_create(&thread_handles[thread], NULL, update_board_parallel, (void *) thread);
-	}
-	
-	for(thread = 0 ; thread < NUM_THREADS; thread++) {
-		pthread_join(thread_handles[thread], NULL);
-	}
+void update_board(int n, int nt) {
+    printf("Running Pthreads!\n");
     
-    // copies the temp board back to the board
-    memcpy(&board[0], &temp[0], nrows*ncols*sizeof(char)); 
+    long thread;
+    pthread_t *thread_handles;
+    thread_handles = (pthread_t *) malloc(sizeof(pthread_t) * nt);
+    
+    // for global use by pthreads
+    NUM_THREADS = nt;
+    
+    // runs n iterations
+    while(n--) {
+        for(thread = 0; thread < nt; thread++) {
+            pthread_create(&thread_handles[thread], NULL, run_iteration, (void *) thread);
+        }
+        
+        for(thread = 0 ; thread < nt; thread++) {
+            pthread_join(thread_handles[thread], NULL);
+        }
+        
+        // copies the temp board back to the board
+        memcpy(&board[0], &temp[0], nrows*ncols*sizeof(char)); 
+    }
+    
+    free(thread_handles);
 }

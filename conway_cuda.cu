@@ -12,10 +12,8 @@
 extern "C" {
     #include "conway_functions.h"
 }
-#include <stdio.h>
-#include <string.h>
 
-// TODO TESTAR VARIOS TILE WIDTH PARA O RELATORIO
+// TODO TESTAR VARIOS TILE WIDTH PARA O RELATORIO ***********************************
 #define TILE_WIDTH 16
 
 extern char *board;
@@ -27,66 +25,16 @@ char *d_board;
 char *d_temp;
 int board_size;
 
-// update the board according to the game of life rules
-void update_board(int n);
-
-// allocates and initialize cuda board and variables
-void initialize_cuda_board();
-
-int main(void) {
-    double t_start, t_end;
-    
-    int n; // number of iteractions
-    int nt; // number of threads (not used in cuda version)
-    
-    // read input
-    scanf("%d %d", &n, &nt);
-    scanf("%d %d",&nrows, &ncols);
-    
-    initialize_board();
-
-    #ifdef COMPARE_SERIAL
-        int n2 = n;
-        initialize_board_2();
-    #endif
-    
-    // run n iterations
-    t_start = rtclock();
-    initialize_cuda_board();
-    update_board(n);
-    // copies the result back to the host
-    cudaMemcpy(board, d_board, board_size, cudaMemcpyDeviceToHost);
-    cudaFree(d_board);
-    cudaFree(d_temp);
-    t_end = rtclock();
-    
-    double t_time = t_end - t_start;
-   
-    #ifdef PRINT_BOARD
-        print_board();
-    #endif
-    
-    printf("Time: %f seconds\n", t_time);
-    
-    // Run serial version and compare with parallel results
-    // Prints the speedup
-    #ifdef COMPARE_SERIAL
-        compare_serial(n2, t_time);
-    #endif
-
-    free_board();
-   
-    return 0;
-}
-
 __device__ int num_neighbours_cuda(char *board, int row, int col, int nrows, int ncols) {
     int num_adj = 0;
     int i,j;
     
     for(i=row-1;i<=row+1;i++) {
         for(j=col-1;j<=col+1;j++) {
+            // a cell is not a neighbour of itself
             if(i==row && j == col) continue;
             
+            // check boundaries and if the neighbour is alive
             if(i >= 0 && j>=0 && i < nrows && j < ncols && board[i*ncols+j] == ON)
                 num_adj++;  
         }
@@ -132,6 +80,7 @@ __global__ void update_board_cuda(char *board, char *temp, int nrows, int ncols)
 	}
 }
 
+// allocates and initialize cuda board and variables
 void initialize_cuda_board() {
     board_size = sizeof(char)*nrows*ncols;
     
@@ -142,13 +91,22 @@ void initialize_cuda_board() {
     cudaMemcpy(d_temp, temp, board_size, cudaMemcpyHostToDevice);
 }
 
-void update_board(int n) {
+void update_board(int n, int nt) {
+    initialize_cuda_board();
+    
     dim3 dimGrid(ceil(ncols/(float)TILE_WIDTH), ceil(nrows/(float) TILE_WIDTH));
 	dim3 dimBlock(TILE_WIDTH, TILE_WIDTH);
     
-    for(int i = 0 ; i < n; i++) {
+    
+    for(int it = 0; it < n; it++) {
         update_board_cuda<<<dimGrid,dimBlock>>>(d_board, d_temp, ncols, nrows);
         cudaThreadSynchronize();
         copy_temp_to_board<<<dimGrid,dimBlock>>>(d_board, d_temp, ncols, nrows);
     }
+    
+    // copies the result back to the host
+    cudaMemcpy(board, d_board, board_size, cudaMemcpyDeviceToHost);
+    
+    cudaFree(d_board);
+    cudaFree(d_temp);
 }
