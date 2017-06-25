@@ -2,7 +2,6 @@
  * MO644 Projeto Final 
  * 
  * Renan Gomes Pereira 103927
- * Pedro Augusto Gebin de Carvalho 208618 
  * 
  * Conway's Game of Life
  * 
@@ -13,7 +12,6 @@ extern "C" {
     #include "conway_functions.h"
 }
 
-// TODO TESTAR VARIOS TILE WIDTH PARA O RELATORIO ***********************************
 #define TILE_WIDTH 16
 
 extern char *board;

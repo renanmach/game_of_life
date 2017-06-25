@@ -1,8 +1,7 @@
 /*
  * MO644 Projeto Final 
  * 
- * Renan Gomes Pereira 103927
- * Pedro Augusto Gebin de Carvalho 208618 
+ * Renan Gomes Pereira 103927 
  * 
  * Conway's Game of Life
  * 
