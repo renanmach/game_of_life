@@ -32,7 +32,7 @@ void update_board(int n, int nt);
 int num_neighbours(char *b, int row, int col);
 
 // initialize board reading from stdio
-void initialize_board(int nrows, int ncols);
+void initialize_board(FILE *fp, int nrows, int ncols);
 
 // free board memory
 void free_board();
@@ -43,18 +43,14 @@ void print_board();
 // to calculate the time
 double rtclock();
 
-// update the board according to the game of life rules
-// serial implementation
-void update_board_serial(char *b, char *t);
-
-// allocs board_serial and copies the value of board to board_serial
-void initialize_board_serial();
-
-// copies the board_serial to temp
-void copy_board_serial_to_temp(); 
-
 // return the number of different values between board and board_serial
 int compare_serial_parallel();
 
 // compare the serial and parallel results and time
 void compare_serial(int n, double t_time_parallel);
+
+// initialize board for serial comparison
+void initialize_board_serial();
+
+// updates the board with the serial approach
+void update_board_serial(char *b, char *t);

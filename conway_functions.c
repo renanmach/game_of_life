@@ -30,7 +30,7 @@ double rtclock() {
   return(Tp.tv_sec + Tp.tv_usec*1.0e-6);
 }
 
-void initialize_board(int nr, int nc) {
+void initialize_board(FILE *fp, int nr, int nc) {
     nrows = nr;
     ncols = nc;
     
@@ -44,7 +44,7 @@ void initialize_board(int nr, int nc) {
         for(j=0;j<ncols;j++) {
             id = i*ncols+j;
             
-            scanf("%c",&board[id]);
+            fscanf(fp, "%c",&board[id]);
             temp[id] = board[id];
         }
     }
@@ -159,10 +159,10 @@ void compare_serial(int n, double t_time_parallel) {
     t_end = rtclock();
     t_time_serial = t_end - t_start;
     
-    printf("Time serial: %f seconds\n", t_time_serial);
-    printf("Speedup: %f\n", t_time_serial/t_time_parallel);
+    printf("Time serial: %.3f seconds\n", t_time_serial);
     
     int diff = compare_serial_parallel();
     if(diff == 0) printf("Same result!\n");
-    else printf("ERROR: Different result! Number of differences = %d\n", diff);  
+    else printf("ERROR: Different result! Number of differences = %d\n", diff); 
+    printf("Speedup: %.3f\n", t_time_serial/t_time_parallel); 
 }

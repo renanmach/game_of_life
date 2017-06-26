@@ -116,8 +116,6 @@ void update_board(int n, int nt) {
         }
         
         cudaThreadSynchronize();
-        
-        //copy_temp_to_board<<<dimGrid,dimBlock>>>(d_board, d_temp, nrows, ncols);
     }
     
     

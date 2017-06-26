@@ -1,12 +1,55 @@
-reset; gcc -fopenmp conway_functions.c conway_omp_tasks.c -Wall -DCOMPARE_SERIAL
-./a.out <test_files/input/1.txt 
+Conway's Game of Life
 
+********************************************************************************
+Input:
+<number of iterations> <number of threads>
+<number of rows> <number of cols>
+nrows*ncols 0 or 1 elements representing the initial board configuration
 
+Example of input:
+10 2
+4 5
+1 0 1 1 1
+0 0 0 1 1
+1 1 1 0 0
+1 0 0 0 0
+********************************************************************************
+Output:
 
-reset; gcc -fopenmp conway_functions.c conway_omp_tasks_niter.c -Wall -DPRINT_BOARD
-reset; gcc -pthread -lpthread conway_functions.c conway_pthreads.c -Wall -DCOMPARE_SERIAL
+****METHOD USED FOR THE PRESENTATION****
+-If compiled with -DCOMPARE_SERIAL, the program outputs 5 lines:
+1 the parallel method it is running
+2 the paralell time
+3 the sequential time
+4 the number of differences between parallel and sequential. If no difference is found,
+so the parallel implementation is correct and it prints "Same result!"
+5 the speedup
 
-nvcc conway_functions.c conway_cuda.cu -DCOMPARE_SERIAL
+****OTHER WAYS TO RUN****
+-If compiled with no flags, the program outputs 5 lines:
+1 the parallel method it is running
+2 the paralell time
 
+-If compiled with -DPRINT_BOARD, the program outputs:
+1 the parallel method it is running
+2 a blank line
+3 the board
+4 a blank line
+5 the parallel time
 
-aclang -DCOMPARE_SERIAL -rtl-mode=profile -opt-poly=none conway_functions.c conway_omp_accelerators.c conway_main.c
+-If compiled with -DPRINT_BOARD and -DCOMPARE_SERIAL, the program outputs:
+1 the parallel method it is running
+2 a blank line
+3 the board
+4 a blank line
+5 the paralell time
+6 the sequential time
+7 the number of differences between parallel and sequential. If no difference is found,
+so the parallel implementation is correct and it prints "Same result!"
+8 the speedup
+********************************************************************************
+create_test_case.c
+
+Create test case can be used to create a test case with a random board.
+You just need to change the constants defined at the beginning of the file
+********************************************************************************
