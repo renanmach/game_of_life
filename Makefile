@@ -31,7 +31,7 @@ conway_cuda_shared_memory: conway_functions.c conway_serial.c conway_main.c
 	$(CUDA) $(MY_FLAGS) conway_functions.c conway_cuda_shared_memory.cu conway_main.c -o cuda_shared_memory
 
 clean:
-	rm -f serial omp omp_tasks pthreads cuda cuda_shared_memory
+	rm -f serial omp omp_tasks pthreads cuda cuda_shared_memory __out*
 
 run:
-	./omp; ./omp_tasks; ./pthreads; ./cuda; ./cuda_shared_memory;
+	./omp > __out1.txt; ./omp_tasks > __out2.txt; ./pthreads > __out3.txt; ./cuda > __out4.txt; ./cuda_shared_memory > __out5.txt; cat __out* > output.dat; rm -f __out*;

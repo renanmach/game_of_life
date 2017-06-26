@@ -47,8 +47,6 @@ int main(void) {
         print_board();
         #endif
         
-        
-        
         printf("Time: %.3f seconds\n", t_time);
         
         // Compares the board with the serial version
