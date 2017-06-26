@@ -31,7 +31,7 @@ void update_board(int n, int nt);
 // the position (row, col).
 int num_neighbours(char *b, int row, int col);
 
-// initialize board reading from stdio
+// initialize board reading from the file in fp
 void initialize_board(FILE *fp, int nrows, int ncols);
 
 // free board memory
